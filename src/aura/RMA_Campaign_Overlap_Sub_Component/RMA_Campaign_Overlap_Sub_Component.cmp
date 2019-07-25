@@ -1,0 +1,9 @@
+<aura:component access="global" >
+    <!--Register the component level event-->
+    <aura:registerEvent name="SelectedRecordEvent" type="c:RMA_Campaign_Overlap_Component_Event"/>
+    <aura:attribute name="oRecord" type="Object" />
+    <aura:attribute name="Campaign" type="String" />
+    <li role="presentation" class="slds-listbox__item slds-listbox__option-text slds-listbox__option-text_entity" onclick="{!c.selectRecord}">
+        {!v.oRecord.Name}
+    </li>
+</aura:component>

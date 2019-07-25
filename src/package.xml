@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>RMA_Campaign_Overlap_Controller</members>
+        <members>RMA_Campaign_Overlap_Controller_Test</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>RMA_Campaign_Overlap_Component_Event</members>
+        <members>RMA_Campaign_Overlap_Report</members>
+        <members>RMA_Campaign_Overlap_Sub_Component</members>
+        <name>AuraDefinitionBundle</name>
+    </types>
+    <types>
+        <members>Campaign_Overlap_Report</members>
+        <name>CustomTab</name>
+    </types>
+    <types>
+        <members>Contact.Overlap_Contact_Members</members>
+        <members>Lead.Overlap_Lead_Members</members>
+        <name>FieldSet</name>
+    </types>
+    <version>45.0</version>
+</Package>

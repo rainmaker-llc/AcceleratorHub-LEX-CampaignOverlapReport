@@ -1,0 +1,159 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" controller="RMA_Campaign_Overlap_Controller">
+	<!--declare events handlers--> 
+    <aura:handler name="SelectedRecordEvent" event="c:RMA_Campaign_Overlap_Component_Event" action="{!c.handleComponentEvent}"/>
+    <aura:handler name="init" value="{!this}" action="{!c.onInit}"/>
+    
+    <!-- Internal Attributes -->
+    <aura:attribute name="Campaign1" type="Object" />
+    <aura:attribute name="Campaign2" type="Object" />
+    <aura:attribute name="SearchKeyWord" type="string" />
+    <aura:attribute name="SearchKeyWord1" type="string" />
+    <aura:attribute name="CampaignId1" type="String" />
+    <aura:attribute name="CampaignId2" type="String" />
+    <aura:attribute name="leadSoqlQueries" type="Object" />
+    <aura:attribute name="contactSoqlQueries" type="Object" />
+    <aura:attribute name="OverlapMembers" type="Object" />
+    <aura:attribute name="data" type="Object"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="Title" type="String"/>
+    
+    <ltng:require scripts="{!$Resource.Chartjs}"  />
+    <lightning:card>
+        <lightning:spinner alternativeText="records" class="slds-hide" variant="brand" size="medium" aura:id="buttonSpinner"/>
+        <div class="slds-grid slds-wrap slds-grid--vertical-stretch">
+            <div onmouseleave="{!c.onblur}" title="Campaign 1" id="CampaignLookup" class="divCampaign slds-form-element slds-lookup slds-is-close slds-col  slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap">
+                <div aura:id="lookupField" class="slds-combobox__form-element slds-input-has-icon " >
+                    <ui:inputText click="{!c.onfocus}"
+                                  label="Campaign 1"
+                                  updateOn="keyup"
+                                  keyup="{!c.keyPressController}"
+                                  class="slds-lookup__search-input uiInputSearchBox"
+                                  value="{!v.SearchKeyWord}"
+                                  placeholder="Search Campaign"/>
+                </div>
+                <div class="slds-lookup__menu slds-listbox slds-listbox_vertical listSize" role="listbox">
+                    <lightning:spinner alternativeText="records" class="slds-hide" variant="brand" size="small" aura:id="mySpinner"/>
+                    <ul style="min-height:40px;margin-top:0px !important">
+                        <aura:iteration items="{!v.Campaign1}" var="singleRec">
+                            <c:RMA_Campaign_Overlap_Sub_Component oRecord="{!singleRec}" Campaign="Campaign1" />
+                        </aura:iteration>
+                    </ul>
+                </div>
+            </div>
+            <div onmouseleave="{!c.onblur}" title="Campaign 2" id="CampaignLookup1" class="divCampaign slds-form-element slds-lookup slds-is-close slds-col  slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap">
+                <div aura:id="lookupField1" class="slds-combobox__form-element slds-input-has-icon " >
+                    <ui:inputText click="{!c.onfocus}"
+                                  label="Campaign 2"
+                                  updateOn="keyup"
+                                  keyup="{!c.keyPressController}"
+                                  class="slds-lookup__search-input uiInputSearchBox"
+                                  value="{!v.SearchKeyWord1}"
+                                  placeholder="Search Campaign"/>
+                </div>
+                <div class="slds-lookup__menu slds-listbox slds-listbox_vertical listSize" role="listbox">
+                    <lightning:spinner alternativeText="records" class="slds-hide" variant="brand" size="small" aura:id="mySpinner1"/>
+                    <ul style="min-height:40px;margin-top:0px !important">
+                        <aura:iteration items="{!v.Campaign2}" var="singleRec">
+                            <c:RMA_Campaign_Overlap_Sub_Component oRecord="{!singleRec}" Campaign="Campaign2" />
+                        </aura:iteration>
+                    </ul>
+                </div>
+            </div>
+            <div class="divCampaign slds-col  slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap" style="margin-top: 1.3%;">
+                <!--<lightning:button variant="brand" label="Compare Campaigns" title="Brand action" onclick="{! c.handleClick }" />-->
+                <button class="slds-button slds-button_brand" onclick="{!c.handleClick}" id= "resetChart">Compare Campaigns</button>
+            </div>
+        </div>
+        
+        <div class="slds-grid slds-wrap " style="display: none;margin-top: 1%;" id="tableDiv">
+            <div class="slds-grid slds-wrap slds-grid--vertical-stretch">
+                <div class="slds-col  slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap "  style="min-width: 400px;" id ="canvas1">
+                    <canvas aura:id="pie-chart1"></canvas>    
+                </div>
+                <div class="slds-col  slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap " style="min-width: 400px;">
+                    <canvas aura:id="pie-chart2"></canvas>   
+                </div>
+                <div class="slds-col  slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap " style="min-width: 400px;">
+                    <canvas aura:id="pie-chart3"></canvas>    
+                </div>
+            </div>
+            <div class="slds-col slds-size_2-of-2 slds-grid slds-wrap " style="margin-top: 1%;">
+                <lightning:tabset variant="scoped">
+                    <lightning:tab label="General Details" >
+                        <div class="slds-grid slds-wrap slds-grid--vertical-stretch">
+                            <div class="slds-col slds-box slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap divCss" >
+                                <div class="slds-col slds-size_2-of-2 slds-text-heading--small slds-m-top--small js-tile-label slds-align_absolute-center" style="margin-bottom:2%;"><ui:outputText value="{! v.SearchKeyWord}"/></div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Members :"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.totalLeadMembersInCampaign1 + v.OverlapMembers.totalContactMembersInCampaign1}</div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Leads :"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.totalLeadMembersInCampaign1 }</div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Contact :"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.totalContactMembersInCampaign1} </div>
+                            </div>
+                            <div class="slds-col slds-box slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap divCss" >
+                                <div class="slds-col slds-size_2-of-2 slds-text-heading--small slds-m-top--small js-tile-label slds-align_absolute-center" style="margin-bottom:2%;"><ui:outputText value="{! v.SearchKeyWord1}"/></div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Members :"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.totalLeadMembersInCampaign2 + v.OverlapMembers.totalContactMembersInCampaign2}</div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Leads :"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.totalLeadMembersInCampaign2 }</div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Contact :"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.totalContactMembersInCampaign2} </div>
+                            </div>
+                            <div class="slds-col slds-box slds-size_1-of-1 slds-medium-size_3-of-12 slds-large-size_3-of-12 slds-wrap divCss" >
+                                <div class="slds-col slds-size_2-of-2 slds-text-heading--small slds-m-top--small js-tile-label slds-align_absolute-center" style="margin-bottom:2%;"><ui:outputText value="Overlap Members"/></div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Overlap Leads"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.overlapLeadMembersInCampaign}</div>
+                                <div class="slds-col slds-size_1-of-2"><ui:outputText value="Total Overlap Contacts"/></div>
+                                <div class="slds-col slds-size_1-of-2">{! v.OverlapMembers.overlapContactMembersInCampaign}</div>
+                            </div>
+                        </div>
+                    </lightning:tab>
+                </lightning:tabset>
+            </div>
+        </div>
+    </lightning:card>
+    <div class="slds-modal slds-fade-in-open" style="height: 640px;display:none;" id="modal-content-1" role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1">
+        <div class="slds-modal__container">
+                <div class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+                            <a onclick="{!c.closeWindow}"><lightning:icon iconName="utility:close" alternativeText="Close this window" variant="inverse" size="small"/></a>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{! v. Title}</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning:datatable
+                                         keyField="id"
+                                         data="{! v.data }"
+                                         columns="{! v.columns }"
+                                         hideCheckboxColumn="true" />
+                    
+                </div>
+                <div class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick="{!c.closeWindow}">Cancel</button>
+                    <button class="slds-button slds-button_brand">Save</button>
+                </div>
+            </div>
+    </div>
+    <div class="slds-backdrop slds-backdrop_open" style="height:100%; display:none" id="modal-content"></div>
+    <!-- declare aura-html -->
+    <aura:html tag="style">
+        .canvas{
+        width: 0 !important;
+        height: 0 !important;
+        }
+        .chartjs-render-monitor{
+        width: none !important;
+        height: none !important;
+        }
+        .divCss{
+        display:flex;
+        margin: 0.5%;
+        }
+        .divCampaign{
+        margin-left: 2%;
+        }
+        .uiInputSearchBox{
+        width: 95% !important;
+        }
+    </aura:html>
+</aura:component>
